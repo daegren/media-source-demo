@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <video controls style="width: 1280px; height: 720px"></video>
+
+    <script type="text/javascript">
+      const video = document.querySelector("video");
+      var assetURL = "/video/camera/test-2019-05-31T13-57-38.mp4";
+
+      const mimeCodec = 'video/mp4; codecs="avc1.4D601F"';
+
+      if ("MediaSource" in window && MediaSource.isTypeSupported(mimeCodec)) {
+        var mediaSource = new MediaSource();
+        //console.log(mediaSource.readyState); // closed
+        video.src = URL.createObjectURL(mediaSource);
+        mediaSource.addEventListener("sourceopen", sourceOpen);
+      } else {
+        console.error("Unsupported MIME type or codec: ", mimeCodec);
+      }
+
+      function sourceOpen(_) {
+        //console.log(this.readyState); // open
+        var mediaSource = this;
+        var sourceBuffer = mediaSource.addSourceBuffer(mimeCodec);
+        sourceBuffer.addEventListener("error", function(e) {
+          console.log("onerror", e);
+        });
+        sourceBuffer.addEventListener("abort", function(e) {
+          console.log("onabort", e);
+        });
+        fetchAB(assetURL, function(buf) {
+          sourceBuffer.addEventListener("updateend", function(_) {
+            mediaSource.endOfStream();
+            video.play();
+            //console.log(mediaSource.readyState); // ended
+          });
+          sourceBuffer.appendBuffer(buf);
+        });
+      }
+
+      function fetchAB(url, cb) {
+        console.log(url);
+        var xhr = new XMLHttpRequest();
+        xhr.open("get", url);
+        xhr.responseType = "arraybuffer";
+        xhr.onload = function() {
+          cb(xhr.response);
+        };
+        xhr.send();
+      }
+
+      // function fetchVideo(url, cb) {
+      //   fetch(url, {})
+      //     .then(data => data.arrayBuffer())
+      //     .then(data => cb(data));
+      // }
+
+      // function sourceOpen() {
+      //   var mediaSource = this;
+      //   const sourceBuffer = mediaSource.addSourceBuffer(mimeCodec);
+      //   fetchVideo(assetUrl, buf => {
+      //     console.log(mediaSource.readyState);
+      //     sourceBuffer.addEventListener("updateend", () => {
+      //       console.log(mediaSource.readyState);
+      //       mediaSource.endOfStream();
+      //       video.play();
+      //     });
+      //     sourceBuffer.appendBuffer(buf);
+      //   });
+      // }
+
+      // if ("MediaSource" in window && MediaSource.isTypeSupported(mimeCodec)) {
+      //   var mediaSource = new MediaSource();
+
+      //   video.src = URL.createObjectURL(mediaSource);
+      //   mediaSource.addEventListener("sourceopen", sourceOpen);
+      //   mediaSource.addEventListener("sourceended", e => {
+      //     console.log("stream ended", e);
+      //   });
+      // } else {
+      //   console.error("Unsupported MIME type or codec: ", mimeCodec);
+      // }
+    </script>
+  </body>
+</html>
